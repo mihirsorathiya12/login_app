@@ -1,7 +1,5 @@
-// src/components/Login.js
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -9,25 +7,42 @@ function Login() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-
-    if (!storedUser) {
-      setError("No user found. Please register.");
-      return;
+  // useEffect to check if the user is already authenticated
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem("isAuthenticated");
+    if (isAuthenticated) {
+      navigate("/dashboard");
     }
+  }, [navigate]);
 
-    if (storedUser.email !== email || storedUser.password !== password) {
-      setError("Invalid email or password.");
-      return;
-    }
+  // Memoizing the error message to prevent unnecessary re-renders
+  const memoizedError = useMemo(() => {
+    return error;
+  }, [error]);
 
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("username", storedUser.username);
-    navigate("/dashboard");
-  };
+  // useCallback to memoize handleLogin function
+  const handleLogin = useCallback(
+    (e) => {
+      e.preventDefault();
+
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+
+      if (!storedUser) {
+        setError("No user found. Please register.");
+        return;
+      }
+
+      if (storedUser.email !== email || storedUser.password !== password) {
+        setError("Invalid email or password.");
+        return;
+      }
+
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("username", storedUser.username);
+      navigate("/dashboard");
+    },
+    [email, password, navigate] // Memoize the function to avoid unnecessary re-creations
+  );
 
   return (
     <div className="container d-flex justify-content-center align-items-center vh-100 login-container">
@@ -54,7 +69,7 @@ function Login() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          {error && <div className="text-danger mb-3">{error}</div>}
+          {memoizedError && <div className="text-danger mb-3">{memoizedError}</div>}
           <button type="submit" className="btn btn-primary w-100 py-2 login-btn">
             Login
           </button>

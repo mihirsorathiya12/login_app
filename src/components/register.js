@@ -1,5 +1,4 @@
-// src/components/Register.js
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Register() {
@@ -10,26 +9,42 @@ function Register() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleRegister = (e) => {
-    e.preventDefault();
-
-    if (!username || !email || !password || !confirmPassword) {
-      setError("All fields are required.");
-      return;
+  
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem("isAuthenticated");
+    if (isAuthenticated === "true") {
+      navigate("/dashboard");
     }
+  }, [navigate]);
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
+  
+  const memoizedError = useMemo(() => {
+    return error;
+  }, [error]);
 
-    const user = { username, email, password };
-    localStorage.setItem("user", JSON.stringify(user));
-    localStorage.setItem("isAuthenticated", "false");
+  const handleRegister = useCallback(
+    (e) => {
+      e.preventDefault();
 
-    alert("Registration successful. Please log in.");
-    navigate("/");
-  };
+      if (!username || !email || !password || !confirmPassword) {
+        setError("All fields are required.");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.");
+        return;
+      }
+
+      const user = { username, email, password };
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("isAuthenticated", "false");
+
+      alert("Registration successful. Please log in.");
+      navigate("/");
+    },
+    [username, email, password, confirmPassword, navigate] 
+  );
 
   return (
     <div className="container d-flex justify-content-center align-items-center vh-100 register-container">
@@ -76,7 +91,7 @@ function Register() {
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </div>
-          {error && <div className="text-danger mb-3">{error}</div>}
+          {memoizedError && <div className="text-danger mb-3">{memoizedError}</div>}
           <button type="submit" className="btn btn-primary w-100 py-2 register-btn">
             Register
           </button>
